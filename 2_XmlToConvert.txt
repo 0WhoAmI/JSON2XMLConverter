@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<root>
+  <name>John</name>
+  <age>30</age>
+  <city>New York</city>
+  <cars>Ford</cars>
+  <cars>BMW</cars>
+  <cars>Fiat</cars>
+</root>

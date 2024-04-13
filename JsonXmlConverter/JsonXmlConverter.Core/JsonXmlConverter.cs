@@ -1,91 +1,191 @@
 ﻿using System.Text;
-using System.Xml;
 
 namespace JsonXmlConverter
 {
     public class JsonXmlConverter : IConverter
     {
-        public string ConvertJSONtoXML(string json)
+        public string BeautyJson(string json)
         {
-            StringBuilder xmlBuilder = new StringBuilder();
-            json = json.Trim();
+            return FormatJson(json, indentLevel: 0);
+        }
 
-            if (json.StartsWith("{") && json.EndsWith("}"))
+        public string BeautyXml(string xml)
+        {
+            return FormatXml(xml, indentLevel: 0);
+        }
+
+        public void ConvertAndSaveToFile(string inputFilePath, string outputFilePath)
+        {
+            string fileContent = File.ReadAllText(inputFilePath);
+
+            if (fileContent == null || fileContent.Length <= 1)
             {
-                Dictionary<string, object> keyValuePairs = new Dictionary<string, object>();
-
-                // Usuwamy nawiasy klamrowe
-                json = json.Substring(1, json.Length - 2);
-
-                // Dzielimy na pary klucz-wartość
-                string[] pairs = json.Split(',');
-
-                // Konwersja na XML
-                xmlBuilder.Append("<root>");
-                foreach (string pair in pairs)
-                {
-                    string[] keyValue = pair.Split(new char[] { ':' }, 2); // Poprawiamy podział tylko na pierwszym dwukropku
-                    if (keyValue.Length == 2)
-                    {
-                        string key = keyValue[0].Trim().Trim('"');
-                        string value = keyValue[1].Trim();
-                        if (value.StartsWith("\"") && value.EndsWith("\""))
-                        {
-                            value = value.Substring(1, value.Length - 2);
-                            xmlBuilder.Append($"<{key}>{value}</{key}>");
-                        }
-                        else if (value.StartsWith("[") && value.EndsWith("]"))
-                        {
-                            xmlBuilder.Append($"<{key}>");
-                            string[] arrayValues = value.Substring(1, value.Length - 2).Split(',');
-                            foreach (string arrayValue in arrayValues)
-                            {
-                                xmlBuilder.Append($"<{key}Item>{arrayValue.Trim().Trim('"')}</{key}Item>");
-                            }
-                            xmlBuilder.Append($"</{key}>");
-                        }
-                        else
-                        {
-                            xmlBuilder.Append($"<{key}>{value}</{key}>");
-                        }
-                    }
-                }
-                xmlBuilder.Append("</root>");
+                throw new Exception("Błąd pobierania tekstu z pliku");
             }
 
-            return xmlBuilder.ToString();
+            string convertedContent;
+
+            //if (IsJson($"{fileContent[0]}{fileContent[^1]}"))
+            //    convertedContent = ConvertJSONtoXML(fileContent);
+            //else if (IsXml($"{fileContent[0]}{fileContent[^1]}"))
+            //    convertedContent = ConvertXMLtoJSON(fileContent);
+            //else
+            //    throw new Exception("Tekst z pliku nie przypomina ani Jsona, ani Xml");
+
+            if (IsJson(fileContent))
+                convertedContent = ConvertJSONtoXML(fileContent);
+            else if (IsXml(fileContent))
+                convertedContent = ConvertXMLtoJSON(fileContent);
+            else
+                throw new Exception("Tekst z pliku nie przypomina ani Jsona, ani Xml");
+
+            File.WriteAllText(outputFilePath, convertedContent);
+        }
+
+        public string ConvertJSONtoXML(string json)
+        {
+            throw new NotImplementedException();
+
         }
 
         public string ConvertXMLtoJSON(string xml)
         {
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(xml);
+            throw new NotImplementedException();
+        }
 
-            StringBuilder jsonBuilder = new StringBuilder();
-            jsonBuilder.Append("{");
+        public bool IsJson(string text)
+        {
+            text = text.Trim();
 
-            foreach (XmlNode node in xmlDoc.DocumentElement.ChildNodes)
+            return text.StartsWith("{") && text.EndsWith("}");
+        }
+
+        public bool IsXml(string text)
+        {
+            text = text.Trim();
+
+            return text.StartsWith("<") && text.EndsWith(">");
+        }
+
+        private string FormatJson(string json, int indentLevel)
+        {
+            var indentString = new string(' ', indentLevel * 2);
+            var result = new StringBuilder();
+            var isInString = false;
+            var isNewLine = false;
+            var isEscaped = false;
+            char? lastChar = null;
+
+            foreach (var ch in json)
             {
-                if (node.ChildNodes.Count == 1)
+                if (!isEscaped && ch == '"')
                 {
-                    jsonBuilder.Append($"\"{node.Name}\": \"{node.InnerText}\", ");
+                    isInString = !isInString;
+                }
+
+                if (!isInString)
+                {
+                    if (ch == '}' || ch == ']')
+                    {
+                        indentLevel--;
+                        result.AppendLine();
+                        result.Append(new string(' ', indentLevel * 2));
+                    }
+
+                    if (lastChar == '{' || lastChar == '[' || ch == ',' || (lastChar == ':' && ch != '{' && ch != '['))
+                    {
+                        result.AppendLine();
+                        result.Append(new string(' ', indentLevel * 2));
+                    }
+
+                    if (ch == '{' || ch == '[')
+                    {
+                        indentLevel++;
+                    }
+                }
+
+                result.Append(ch);
+
+                if (ch == '\\' && !isEscaped)
+                {
+                    isEscaped = true;
                 }
                 else
                 {
-                    jsonBuilder.Append($"\"{node.Name}\": [");
-                    foreach (XmlNode childNode in node.ChildNodes)
-                    {
-                        jsonBuilder.Append($"\"{childNode.InnerText}\", ");
-                    }
-                    jsonBuilder.Remove(jsonBuilder.Length - 2, 2); // Usuwamy ostatnią przecinek i spację
-                    jsonBuilder.Append("], ");
+                    isEscaped = false;
                 }
+
+                if (!isInString && (ch == '{' || ch == '[' || ch == '}' || ch == ']'))
+                {
+                    isNewLine = true;
+                }
+                else
+                {
+                    isNewLine = false;
+                }
+
+                lastChar = ch;
             }
 
-            jsonBuilder.Remove(jsonBuilder.Length - 2, 2); // Usuwamy ostatnią przecinek i spację
-            jsonBuilder.Append("}");
+            return result.ToString();
+        }
 
-            return jsonBuilder.ToString();
+        private string FormatXml(string xml, int indentLevel)
+        {
+            var indentString = new string(' ', indentLevel * 2);
+            var result = new StringBuilder();
+            var isInString = false;
+            var isNewLine = false;
+            var isEscaped = false;
+            var tagStart = false;
+            char? lastChar = null;
+
+            foreach (var ch in xml)
+            {
+                if (!isInString)
+                {
+                    if (ch == '<')
+                    {
+                        if (tagStart)
+                        {
+                            result.AppendLine();
+                            result.Append(new string(' ', indentLevel * 2));
+                        }
+
+                        tagStart = true;
+                    }
+                    else if (ch == '>')
+                    {
+                        tagStart = false;
+                    }
+
+                    if (lastChar == '>' && ch != '<' && !Char.IsWhiteSpace(ch))
+                    {
+                        result.AppendLine();
+                        result.Append(new string(' ', indentLevel * 2));
+                    }
+                }
+
+                result.Append(ch);
+
+                if (ch == '\\' && !isEscaped)
+                {
+                    isEscaped = true;
+                }
+                else
+                {
+                    isEscaped = false;
+                }
+
+                if (ch == '"' && !isEscaped)
+                {
+                    isInString = !isInString;
+                }
+
+                lastChar = ch;
+            }
+
+            return result.ToString();
         }
     }
 }
