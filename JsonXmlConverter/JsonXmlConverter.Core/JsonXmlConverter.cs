@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.RegularExpressions;
 
 namespace JsonXmlConverter
 {
@@ -44,8 +45,59 @@ namespace JsonXmlConverter
 
         public string ConvertJSONtoXML(string json)
         {
-            throw new NotImplementedException();
+            // Usuń białe znaki z JSONa
+            json = Regex.Replace(json, @"(?<!\\)(?:\\\\)*\s+", "");
 
+            // Utwórz korzeń XML
+            string xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<root>\n";
+
+            ICollection<Match> matches = Regex.Matches(json, "\"(\\w+)\":(\"([^\"]*)\"|(\\d+)|\\[((?:(\"([^\"]*)\"|(\\d+))(?:,|\\s)*)*)\\])");
+
+            // Użyj wyrażenia regularnego, aby znaleźć wszystkie pary klucz-wartość JSON
+            foreach (Match match in matches)
+            {
+                string key = match.Groups[1].Value;
+
+                // Jeśli wartość jest tablicą, przetwórz ją
+                if (match.Groups[5].Success)
+                {
+                    string[] arrayValues;
+
+                    // Sprawdź, czy przechwycono wartości stringów w tablicy
+                    if (match.Groups[7].Success)
+                    {
+                        arrayValues = match.Groups[7].Captures.Select(m => m.Value).ToArray();
+                    }
+                    // Jeśli nie przechwycono wartości stringów, sprawdź, czy przechwycono wartości liczbowe w tablicy
+                    else if (match.Groups[8].Success)
+                    {
+                        arrayValues = match.Groups[8].Captures.Select(m => m.Value).ToArray();
+                    }
+                    else
+                    {
+                        arrayValues = [];
+                    }
+
+                    foreach (string element in arrayValues)
+                    {
+                        // Dodaj element XML
+                        xml += $"<{key}>{element}</{key}>\n";
+                    }
+
+                    continue;
+                }
+
+                // 3 - string, 4 - int
+                string value = match.Groups[3].Success ? match.Groups[3].Value : match.Groups[4].Success ? match.Groups[4].Value : "";
+
+                // Dodaj element XML
+                xml += $"<{key}>{value}</{key}>\n";
+            }
+
+            // Zamknij korzeń XML
+            xml += "</root>";
+
+            return xml;
         }
 
         public string ConvertXMLtoJSON(string xml)
