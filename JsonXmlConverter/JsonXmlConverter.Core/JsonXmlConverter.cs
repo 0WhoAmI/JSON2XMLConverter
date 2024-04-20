@@ -1,5 +1,5 @@
-﻿using System.Text;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace JsonXmlConverter.Core
 {
@@ -116,12 +116,77 @@ namespace JsonXmlConverter.Core
             return xml;
         }
 
+        // TODO: zrobić tablice
         public string ConvertXMLtoJSON(string xml)
         {
-            var jsonBuilder = new StringBuilder();
-            ConvertXmlNodeToJson(xml.Substring(xml.IndexOf('>') + 1), jsonBuilder); // Ignore the root element
+            // Usuń białe znaki z XMLa
+            xml = Regex.Replace(xml, @"(?<![a-zA-Z])\s(?![a-zA-Z])", "");
 
-            return jsonBuilder.ToString();
+            //xml = xml.Replace("}", "\"closeObjJsonXmlConverter\":}");
+
+            // Remove XML declaration and root element
+            xml = Regex.Replace(xml, @"<\?xml.*\?>", "").Trim();
+            xml = Regex.Replace(xml, @"<root.*?>|</root>", "").Trim();
+
+            // Regular expression to match XML tags and content
+            ICollection<Match> matches = Regex.Matches(xml, @"<(\w+)(?:\s+[^>]*)*>([^<]*)<\/\1>|<(\w+)(?:\s+[^>]*)*>|<\/(\w+)>|\[((?:(?:""([^""]*)""|(\d+))(?:,|\s)*)*)\]|\{|\}");
+
+            int a = 2;
+            string json = $"{{\n{AddIndentsJson(a - 1)}\"root\": {{\n";
+
+            foreach (Match match in matches)
+            {
+                if (match.Groups[1].Success) // Opening tag with content
+                {
+                    string tagName = match.Groups[1].Value;
+                    string content = match.Groups[2].Value;
+
+                    //json += $"{AddIndentsJson(a)}Opening Tag: <{tagName}>, Content: {content}\n";
+
+                    json += $"{AddIndentsJson(a)}\"{tagName}\": \"{content}\",\n";
+                }
+                else if (match.Groups[3].Success) // Opening tag without content
+                {
+                    string tagName = match.Groups[3].Value;
+
+                    //json += $"{AddIndentsJson(a)}Opening Tag: <{tagName}>\n";
+
+                    json += $"{AddIndentsJson(a)}\"{tagName}\": {{\n";
+                    a++;
+                }
+                else if (match.Groups[4].Success) // Closing tag
+                {
+                    string tagName = match.Groups[4].Value;
+
+                    //json += $"{AddIndentsJson(a)}Closing Tag: </{tagName}>\n";
+
+                    // jezeli ostatni element ma ',' a zamykamy obiekt to go usuwamy
+                    int lastCommaIndex = json.LastIndexOf(',');
+                    if (lastCommaIndex != -1)
+                    {
+                        json = json.Substring(0, lastCommaIndex) + json.Substring(lastCommaIndex + 1);
+                    }
+
+                    json += $"{AddIndentsJson(a-1)}}},\n";
+                    a--;
+                }
+                else if (match.Groups[5].Success) // Array
+                {
+                    string arrayContent = match.Groups[5].Value;
+
+                    //json += $"{AddIndentsJson(a)}Array: [{arrayContent}]\n";
+                }
+                else if (match.Value == "{") // Opening curly brace
+                {
+                    //json += $"{AddIndentsJson(a)}Opening Curly Brace: {{\n";
+                }
+                else if (match.Value == "}") // Closing curly brace
+                {
+                    //json += $"{AddIndentsJson(a)}Closing Curly Brace: }}\n";
+                }
+            }
+
+            return json;
         }
 
         public bool IsJson(string text)
@@ -143,57 +208,16 @@ namespace JsonXmlConverter.Core
             return text.StartsWith("<") && text.EndsWith(">");
         }
 
-        private string AddIndents(int qty)
+        private string AddIndentsXml(int newLineIndentQty)
         {
             // 2 spację dla ładniejszych wcięć
-            return new string(' ', qty * 2);
+            return new string(' ', newLineIndentQty * 2);
         }
 
-        private static void ConvertXmlNodeToJson(string xml, StringBuilder jsonBuilder)
+        private string AddIndentsJson(int newLineIndentQty)
         {
-            int index = 0;
-            while (index < xml.Length)
-            {
-                if (xml[index] == '<')
-                {
-                    int closingIndex = xml.IndexOf('>', index + 1);
-                    if (closingIndex == -1)
-                        break;
-
-                    string tagName = xml.Substring(index + 1, closingIndex - index - 1);
-                    index = closingIndex + 1;
-
-                    // Check if it's an opening or closing tag
-                    if (tagName[0] != '/')
-                    {
-                        // Opening tag
-                        jsonBuilder.Append($"\"{tagName}\": ");
-                        if (xml[index] == '<')
-                        {
-                            jsonBuilder.Append("{");
-                            index++;
-                            ConvertXmlNodeToJson(xml.Substring(index), jsonBuilder);
-                        }
-                        else
-                        {
-                            // Text content
-                            int endTagIndex = xml.IndexOf('<', index);
-                            jsonBuilder.Append($"\"{xml.Substring(index, endTagIndex - index)}\"");
-                            index = endTagIndex;
-                        }
-                    }
-                    else
-                    {
-                        // Closing tag
-                        jsonBuilder.Append("}");
-                        return;
-                    }
-                }
-                else
-                {
-                    index++;
-                }
-            }
+            // 3 spację dla ładniejszych wcięć
+            return new string(' ', newLineIndentQty * 3);
         }
     }
 }
