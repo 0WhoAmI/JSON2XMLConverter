@@ -1,12 +1,8 @@
-﻿namespace JsonXmlConverter
+﻿namespace JsonXmlConverter.Core
 {
     public interface IConverter
     {
-        string BeautyJson(string json);
-
-        string BeautyXml(string xml);
-
-        void ConvertAndSaveToFile(string inputFilePath, string outputFilePath);
+        string ConvertFromFile(string inputFilePath);
 
         string ConvertJSONtoXML(string json);
 

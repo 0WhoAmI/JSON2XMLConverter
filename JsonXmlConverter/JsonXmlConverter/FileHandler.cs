@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace JsonXmlConverter.Core
+namespace JsonXmlConverter.Program
 {
     public class FileHandler
     {

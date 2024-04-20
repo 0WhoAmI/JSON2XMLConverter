@@ -1,6 +1,6 @@
 ﻿using JsonXmlConverter.Core;
 
-namespace JsonXmlConverter
+namespace JsonXmlConverter.Program
 {
     public class Program
     {
@@ -17,7 +17,7 @@ namespace JsonXmlConverter
 
         public static void Main(string[] args)
         {
-            JsonXmlConverter converter = new JsonXmlConverter();
+            Core.JsonXmlConverter converter = new Core.JsonXmlConverter();
             FileHandler fileHandler = new FileHandler();
             Program program = new Program(converter, fileHandler);
 
@@ -40,56 +40,67 @@ namespace JsonXmlConverter
 
             while (true)
             {
-                if (conversionSourceChoice == 1)
+                try
                 {
-                    Console.WriteLine("Podaj ścieżkę do pliku:");
 
-                    string inputFilePath = "";
-                    while (true)
+                    if (conversionSourceChoice == 1)
                     {
-                        inputFilePath = Console.ReadLine();
-                        if (_fileHandler.FileExists(inputFilePath))
-                            break;
-                        else
-                            Console.WriteLine("Plik nie istnieje. Podaj poprawną ścieżkę:");
+                        Console.WriteLine("Podaj ścieżkę do pliku:");
+
+                        string inputFilePath = "";
+                        while (true)
+                        {
+                            inputFilePath = Console.ReadLine();
+                            if (_fileHandler.FileExists(inputFilePath))
+                                break;
+                            else
+                                Console.WriteLine("Plik nie istnieje. Podaj poprawną ścieżkę:");
+                        }
+
+                        string covertedCode = _converter.ConvertFromFile(inputFilePath);
+
+                        //Console.WriteLine(covertedCode);
+                        File.WriteAllText(outputFilePath, covertedCode);
+                    }
+                    else if (conversionSourceChoice == 2)
+                    {
+                        Console.WriteLine("Podaj kod do konwersji:");
+
+                        string inputCode = "";
+                        string covertedCode = "";
+                        while (true)
+                        {
+                            inputCode = Console.ReadLine();
+                            if (_converter.IsJson(inputCode))
+                            {
+                                covertedCode = _converter.ConvertJSONtoXML(inputCode);
+
+                                break;
+                            }
+                            else if (_converter.IsXml(inputCode))
+                            {
+                                covertedCode = _converter.ConvertXMLtoJSON(inputCode);
+
+                                break;
+                            }
+                            else
+                            {
+                                Console.WriteLine("Podany kod nie przypomina ani Jsona, ani Xml. Podaj poprawny kod:");
+                            }
+                        }
+
+                        //Console.WriteLine(covertedCode);
+                        File.WriteAllText(outputFilePath, covertedCode);
                     }
 
-                    _converter.ConvertAndSaveToFile(inputFilePath, outputFilePath);
+                    Console.WriteLine("Konwersja zakończona pomyślnie. Otwieram plik z wynikiem...");
+
+                    _fileHandler.OpenFile(outputFilePath);
                 }
-                else if (conversionSourceChoice == 2)
+                catch (Exception ex)
                 {
-                    Console.WriteLine("Podaj kod do konwersji:");
-
-                    string inputCode = "";
-                    string covertedCode = "";
-                    while (true)
-                    {
-                        inputCode = Console.ReadLine();
-                        if (_converter.IsJson(inputCode))
-                        {
-                            covertedCode = _converter.ConvertJSONtoXML(inputCode);
-
-                            break;
-                        }
-                        else if (_converter.IsXml(inputCode))
-                        {
-                            covertedCode = _converter.ConvertXMLtoJSON(inputCode);
-
-                            break;
-                        }
-                        else
-                        {
-                            Console.WriteLine("Podany kod nie przypomina ani Jsona, ani Xml. Podaj poprawny kod:");
-                        }
-                    }
-
-                    //Console.WriteLine(covertedCode);
-                    File.WriteAllText(outputFilePath, covertedCode);
+                    Console.WriteLine($"Wystąpił błąd: '{ex.Message}'");
                 }
-
-                Console.WriteLine("Konwersja zakończona pomyślnie. Otwieram plik z wynikiem...");
-
-                _fileHandler.OpenFile(outputFilePath);
             }
         }
     }

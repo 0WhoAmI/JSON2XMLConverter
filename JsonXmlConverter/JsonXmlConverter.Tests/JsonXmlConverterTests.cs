@@ -1,3 +1,5 @@
+using JsonXmlConverter.Core;
+
 namespace JsonXmlConverter.Tests
 {
     public class JsonXmlConverterTests
@@ -7,7 +9,7 @@ namespace JsonXmlConverter.Tests
         {
             // Arrange
             string json = "{\"name\": \"John\", \"age\": 30, \"city\": \"New York\", \"cars\": [\"Ford\", \"BMW\", \"Fiat\"]}";
-            IConverter converter = new JsonXmlConverter();
+            IConverter converter = new Core.JsonXmlConverter();
 
             // Act
             string xml = converter.ConvertJSONtoXML(json);
@@ -25,7 +27,7 @@ namespace JsonXmlConverter.Tests
         {
             // Arrange
             string json = null;
-            IConverter converter = new JsonXmlConverter();
+            IConverter converter = new Core.JsonXmlConverter();
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() => converter.ConvertJSONtoXML(json));
@@ -36,7 +38,7 @@ namespace JsonXmlConverter.Tests
         {
             // Arrange
             string json = "";
-            IConverter converter = new JsonXmlConverter();
+            IConverter converter = new Core.JsonXmlConverter();
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() => converter.ConvertJSONtoXML(json));

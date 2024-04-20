@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <root>
-  <name>John</name>
-  <age>30</age>
-  <city>New York</city>
-  <cars>Ford</cars>
-  <cars>BMW</cars>
-  <cars>Fiat</cars>
+  <date>04-20-2024</date>
+  <milliseconds_since_epoch>1713626728876</milliseconds_since_epoch>
+  <time>03:25:28 PM</time>
 </root>

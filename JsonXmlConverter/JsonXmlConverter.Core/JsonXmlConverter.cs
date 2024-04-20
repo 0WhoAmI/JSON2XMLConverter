@@ -1,21 +1,18 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 
-namespace JsonXmlConverter
+namespace JsonXmlConverter.Core
 {
     public class JsonXmlConverter : IConverter
     {
-        public string BeautyJson(string json)
+        private List<string> keys = new List<string>();
+
+        public JsonXmlConverter()
         {
-            return FormatJson(json, indentLevel: 0);
+
         }
 
-        public string BeautyXml(string xml)
-        {
-            return FormatXml(xml, indentLevel: 0);
-        }
-
-        public void ConvertAndSaveToFile(string inputFilePath, string outputFilePath)
+        public string ConvertFromFile(string inputFilePath)
         {
             string fileContent = File.ReadAllText(inputFilePath);
 
@@ -40,18 +37,21 @@ namespace JsonXmlConverter
             else
                 throw new Exception("Tekst z pliku nie przypomina ani Jsona, ani Xml");
 
-            File.WriteAllText(outputFilePath, convertedContent);
+            return convertedContent;
         }
 
+        // Bez tablicy obiektów
         public string ConvertJSONtoXML(string json)
         {
             // Usuń białe znaki z JSONa
-            json = Regex.Replace(json, @"(?<!\\)(?:\\\\)*\s+", "");
+            json = Regex.Replace(json, @"(?<![a-zA-Z])\s(?![a-zA-Z])", "");
+
+            json = json.Replace("}", "\"closeObjJsonXmlConverter\":}");
 
             // Utwórz korzeń XML
             string xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<root>\n";
 
-            ICollection<Match> matches = Regex.Matches(json, "\"(\\w+)\":(\"([^\"]*)\"|(\\d+)|\\[((?:(\"([^\"]*)\"|(\\d+))(?:,|\\s)*)*)\\])");
+            ICollection<Match> matches = Regex.Matches(json, "\"(\\w+)\":(\"([^\"]*)\"|(\\d+)|\\[((?:(\"([^\"]*)\"|(\\d+))(?:,|\\s)*)*)\\]|\\{|\\})");
 
             // Użyj wyrażenia regularnego, aby znaleźć wszystkie pary klucz-wartość JSON
             foreach (Match match in matches)
@@ -81,7 +81,7 @@ namespace JsonXmlConverter
                     foreach (string element in arrayValues)
                     {
                         // Dodaj element XML
-                        xml += $"<{key}>{element}</{key}>\n";
+                        xml += $"{AddIndents(keys.Count + 1)}<{key}>{element}</{key}>\n";
                     }
 
                     continue;
@@ -90,8 +90,24 @@ namespace JsonXmlConverter
                 // 3 - string, 4 - int
                 string value = match.Groups[3].Success ? match.Groups[3].Value : match.Groups[4].Success ? match.Groups[4].Value : "";
 
+                if (string.IsNullOrEmpty(value))
+                {
+                    if (key != "closeObjJsonXmlConverter")
+                    {
+                        keys.Add(key);
+                        xml += $"{AddIndents(keys.Count)}<{key}>\n";
+                    }
+                    else if (keys.Count > 0)
+                    {
+                        xml += $"{AddIndents(keys.Count)}</{keys.Last()}>\n";
+                        keys.RemoveAt(keys.Count - 1);
+                    }
+
+                    continue;
+                }
+
                 // Dodaj element XML
-                xml += $"<{key}>{value}</{key}>\n";
+                xml += $"{AddIndents(keys.Count + 1)}<{key}>{value}</{key}>\n";
             }
 
             // Zamknij korzeń XML
@@ -102,7 +118,10 @@ namespace JsonXmlConverter
 
         public string ConvertXMLtoJSON(string xml)
         {
-            throw new NotImplementedException();
+            var jsonBuilder = new StringBuilder();
+            ConvertXmlNodeToJson(xml.Substring(xml.IndexOf('>') + 1), jsonBuilder); // Ignore the root element
+
+            return jsonBuilder.ToString();
         }
 
         public bool IsJson(string text)
@@ -116,128 +135,65 @@ namespace JsonXmlConverter
         {
             text = text.Trim();
 
+            if (text.StartsWith("["))
+            {
+                return text[1] == '<';
+            }
+
             return text.StartsWith("<") && text.EndsWith(">");
         }
 
-        private string FormatJson(string json, int indentLevel)
+        private string AddIndents(int qty)
         {
-            var indentString = new string(' ', indentLevel * 2);
-            var result = new StringBuilder();
-            var isInString = false;
-            var isNewLine = false;
-            var isEscaped = false;
-            char? lastChar = null;
-
-            foreach (var ch in json)
-            {
-                if (!isEscaped && ch == '"')
-                {
-                    isInString = !isInString;
-                }
-
-                if (!isInString)
-                {
-                    if (ch == '}' || ch == ']')
-                    {
-                        indentLevel--;
-                        result.AppendLine();
-                        result.Append(new string(' ', indentLevel * 2));
-                    }
-
-                    if (lastChar == '{' || lastChar == '[' || ch == ',' || (lastChar == ':' && ch != '{' && ch != '['))
-                    {
-                        result.AppendLine();
-                        result.Append(new string(' ', indentLevel * 2));
-                    }
-
-                    if (ch == '{' || ch == '[')
-                    {
-                        indentLevel++;
-                    }
-                }
-
-                result.Append(ch);
-
-                if (ch == '\\' && !isEscaped)
-                {
-                    isEscaped = true;
-                }
-                else
-                {
-                    isEscaped = false;
-                }
-
-                if (!isInString && (ch == '{' || ch == '[' || ch == '}' || ch == ']'))
-                {
-                    isNewLine = true;
-                }
-                else
-                {
-                    isNewLine = false;
-                }
-
-                lastChar = ch;
-            }
-
-            return result.ToString();
+            // 2 spację dla ładniejszych wcięć
+            return new string(' ', qty * 2);
         }
 
-        private string FormatXml(string xml, int indentLevel)
+        private static void ConvertXmlNodeToJson(string xml, StringBuilder jsonBuilder)
         {
-            var indentString = new string(' ', indentLevel * 2);
-            var result = new StringBuilder();
-            var isInString = false;
-            var isNewLine = false;
-            var isEscaped = false;
-            var tagStart = false;
-            char? lastChar = null;
-
-            foreach (var ch in xml)
+            int index = 0;
+            while (index < xml.Length)
             {
-                if (!isInString)
+                if (xml[index] == '<')
                 {
-                    if (ch == '<')
+                    int closingIndex = xml.IndexOf('>', index + 1);
+                    if (closingIndex == -1)
+                        break;
+
+                    string tagName = xml.Substring(index + 1, closingIndex - index - 1);
+                    index = closingIndex + 1;
+
+                    // Check if it's an opening or closing tag
+                    if (tagName[0] != '/')
                     {
-                        if (tagStart)
+                        // Opening tag
+                        jsonBuilder.Append($"\"{tagName}\": ");
+                        if (xml[index] == '<')
                         {
-                            result.AppendLine();
-                            result.Append(new string(' ', indentLevel * 2));
+                            jsonBuilder.Append("{");
+                            index++;
+                            ConvertXmlNodeToJson(xml.Substring(index), jsonBuilder);
                         }
-
-                        tagStart = true;
+                        else
+                        {
+                            // Text content
+                            int endTagIndex = xml.IndexOf('<', index);
+                            jsonBuilder.Append($"\"{xml.Substring(index, endTagIndex - index)}\"");
+                            index = endTagIndex;
+                        }
                     }
-                    else if (ch == '>')
+                    else
                     {
-                        tagStart = false;
+                        // Closing tag
+                        jsonBuilder.Append("}");
+                        return;
                     }
-
-                    if (lastChar == '>' && ch != '<' && !Char.IsWhiteSpace(ch))
-                    {
-                        result.AppendLine();
-                        result.Append(new string(' ', indentLevel * 2));
-                    }
-                }
-
-                result.Append(ch);
-
-                if (ch == '\\' && !isEscaped)
-                {
-                    isEscaped = true;
                 }
                 else
                 {
-                    isEscaped = false;
+                    index++;
                 }
-
-                if (ch == '"' && !isEscaped)
-                {
-                    isInString = !isInString;
-                }
-
-                lastChar = ch;
             }
-
-            return result.ToString();
         }
     }
 }
