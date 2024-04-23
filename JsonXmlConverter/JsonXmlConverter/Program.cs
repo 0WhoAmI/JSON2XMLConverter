@@ -15,16 +15,22 @@ namespace JsonXmlConverter.Program
             _fileHandler = fileHandler;
         }
 
+        [STAThread]
         public static void Main(string[] args)
         {
-            Core.JsonXmlConverter converter = new Core.JsonXmlConverter();
-            FileHandler fileHandler = new FileHandler();
-            Program program = new Program(converter, fileHandler);
+            ApplicationConfiguration.Initialize();
 
-            program.Run();
+            Core.JsonXmlConverter converter = new Core.JsonXmlConverter();
+
+            Application.Run(new MainForm(converter));
+
+            //FileHandler fileHandler = new FileHandler();
+            //Program program = new Program(converter, fileHandler);
+            //program.RunCmd();
         }
 
-        private void Run()
+        // Okno konsolowe
+        private void RunCmd()
         {
             Console.WriteLine("Wybierz sposób konwersji:");
             Console.WriteLine("1. Konwersja z pliku");
@@ -35,8 +41,6 @@ namespace JsonXmlConverter.Program
             {
                 Console.WriteLine("Niepoprawny wybór. Wpisz 1 lub 2.");
             }
-
-            string outputFilePath = "output.txt";
 
             while (true)
             {

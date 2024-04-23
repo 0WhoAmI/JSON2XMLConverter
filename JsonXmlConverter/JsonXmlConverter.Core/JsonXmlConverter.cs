@@ -110,7 +110,7 @@ namespace JsonXmlConverter.Core
             return xml;
         }
 
-        // TODO: zrobić tablice
+        // Bez tablicy obiektów
         public string ConvertXMLtoJSON(string xml)
         {
             List<string> values = new List<string>();
