@@ -205,19 +205,72 @@ namespace JsonXmlConverter.Core
         {
             text = text.Trim();
 
-            return text.StartsWith("{") && text.EndsWith("}");
+            int curlyBracketsCount = text.Count(c => c == '{' || c == '}');
+            int squareBracketsCount = text.Count(c => c == '[' || c == ']');
+
+            bool isJson = (text.StartsWith("{") && text.EndsWith("}") ||
+                           text.StartsWith("[") && text.EndsWith("]") ||
+                           (text.StartsWith("\"") && text.EndsWith("\"") && text.Length >= 2) ||
+                           text.Equals("true") || text.Equals("false") ||
+                           (double.TryParse(text, out _) || text.Equals("null"))) &&
+                           curlyBracketsCount % 2 == 0 &&
+                           squareBracketsCount % 2 == 0 &&
+                           AllValuesQuoted(text);
+
+            return isJson;
+        }
+
+        private bool AllValuesQuoted(string text)
+        {
+            char[] charsToReplace = new char[] { ' ', '\t', '\r', '\n', '{', '}', '[', ']' };
+
+            string[] tokens = ReplaceMultipleChars(text, charsToReplace, ' ').Split(',', StringSplitOptions.RemoveEmptyEntries);
+            foreach (string token in tokens)
+            {
+                string trimmedToken = token.Trim();
+                if (!IsNumeric(trimmedToken) && (!trimmedToken.StartsWith("\"") || !trimmedToken.EndsWith("\"")))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool IsNumeric(string value)
+        {
+            // Sprawdzamy, czy wartość po dwukropku jest liczbą
+            int colonIndex = value.IndexOf(':');
+            if (colonIndex >= 0 && colonIndex < value.Length - 1)
+            {
+                string afterColon = value.Substring(colonIndex + 1).Trim();
+                return double.TryParse(afterColon, out _);
+            }
+
+            return false;
+        }
+
+        private string ReplaceMultipleChars(string input, char[] charsToReplace, char replacement)
+        {
+            foreach (char c in charsToReplace)
+            {
+                input = input.Replace(c, replacement);
+            }
+            return input;
         }
 
         public bool IsXml(string text)
         {
             text = text.Trim();
 
-            if (text.StartsWith("["))
-            {
-                return text[1] == '<';
-            }
+            int openingTagsCount = text.Count(c => c == '<' && c != '/');
+            int closingTagsCount = text.Count(c => c == '>');
 
-            return text.StartsWith("<") && text.EndsWith(">");
+            bool hasDeclaration = text.StartsWith("<?xml");
+            bool isXml = (hasDeclaration || text.StartsWith("<")) && text.EndsWith(">") &&
+                         openingTagsCount == closingTagsCount &&
+                         (hasDeclaration ? (openingTagsCount - 1) % 2 == 0 : openingTagsCount % 2 == 0);
+
+            return isXml;
         }
 
         private string AddIndentsXml(int newLineIndentQty)
