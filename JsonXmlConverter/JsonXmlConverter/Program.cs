@@ -42,7 +42,6 @@ namespace JsonXmlConverter.Program
             {
                 try
                 {
-
                     if (conversionSourceChoice == 1)
                     {
                         Console.WriteLine("Podaj ścieżkę do pliku:");

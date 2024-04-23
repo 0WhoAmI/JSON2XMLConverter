@@ -1,12 +1,9 @@
 ﻿using System.Text.RegularExpressions;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace JsonXmlConverter.Core
 {
     public class JsonXmlConverter : IConverter
     {
-        private List<string> keys = new List<string>();
-
         public JsonXmlConverter()
         {
 
@@ -22,14 +19,6 @@ namespace JsonXmlConverter.Core
             }
 
             string convertedContent;
-
-            //if (IsJson($"{fileContent[0]}{fileContent[^1]}"))
-            //    convertedContent = ConvertJSONtoXML(fileContent);
-            //else if (IsXml($"{fileContent[0]}{fileContent[^1]}"))
-            //    convertedContent = ConvertXMLtoJSON(fileContent);
-            //else
-            //    throw new Exception("Tekst z pliku nie przypomina ani Jsona, ani Xml");
-
             if (IsJson(fileContent))
                 convertedContent = ConvertJSONtoXML(fileContent);
             else if (IsXml(fileContent))
@@ -43,6 +32,8 @@ namespace JsonXmlConverter.Core
         // Bez tablicy obiektów
         public string ConvertJSONtoXML(string json)
         {
+            List<string> keys = new List<string>();
+
             // Usuń białe znaki z JSONa
             json = Regex.Replace(json, @"(?<![a-zA-Z])\s(?![a-zA-Z])", "");
 
@@ -57,6 +48,9 @@ namespace JsonXmlConverter.Core
             foreach (Match match in matches)
             {
                 string key = match.Groups[1].Value;
+
+                if (key == "root")
+                    continue;
 
                 // Jeśli wartość jest tablicą, przetwórz ją
                 if (match.Groups[5].Success)
@@ -81,7 +75,7 @@ namespace JsonXmlConverter.Core
                     foreach (string element in arrayValues)
                     {
                         // Dodaj element XML
-                        xml += $"{AddIndents(keys.Count + 1)}<{key}>{element}</{key}>\n";
+                        xml += $"{AddIndentsXml(keys.Count + 1)}<{key}>{element}</{key}>\n";
                     }
 
                     continue;
@@ -95,11 +89,11 @@ namespace JsonXmlConverter.Core
                     if (key != "closeObjJsonXmlConverter")
                     {
                         keys.Add(key);
-                        xml += $"{AddIndents(keys.Count)}<{key}>\n";
+                        xml += $"{AddIndentsXml(keys.Count)}<{key}>\n";
                     }
                     else if (keys.Count > 0)
                     {
-                        xml += $"{AddIndents(keys.Count)}</{keys.Last()}>\n";
+                        xml += $"{AddIndentsXml(keys.Count)}</{keys.Last()}>\n";
                         keys.RemoveAt(keys.Count - 1);
                     }
 
@@ -107,7 +101,7 @@ namespace JsonXmlConverter.Core
                 }
 
                 // Dodaj element XML
-                xml += $"{AddIndents(keys.Count + 1)}<{key}>{value}</{key}>\n";
+                xml += $"{AddIndentsXml(keys.Count + 1)}<{key}>{value}</{key}>\n";
             }
 
             // Zamknij korzeń XML
@@ -119,72 +113,90 @@ namespace JsonXmlConverter.Core
         // TODO: zrobić tablice
         public string ConvertXMLtoJSON(string xml)
         {
+            List<string> values = new List<string>();
+
             // Usuń białe znaki z XMLa
             xml = Regex.Replace(xml, @"(?<![a-zA-Z])\s(?![a-zA-Z])", "");
-
-            //xml = xml.Replace("}", "\"closeObjJsonXmlConverter\":}");
 
             // Remove XML declaration and root element
             xml = Regex.Replace(xml, @"<\?xml.*\?>", "").Trim();
             xml = Regex.Replace(xml, @"<root.*?>|</root>", "").Trim();
 
             // Regular expression to match XML tags and content
-            ICollection<Match> matches = Regex.Matches(xml, @"<(\w+)(?:\s+[^>]*)*>([^<]*)<\/\1>|<(\w+)(?:\s+[^>]*)*>|<\/(\w+)>|\[((?:(?:""([^""]*)""|(\d+))(?:,|\s)*)*)\]|\{|\}");
+            Match[] matches = Regex.Matches(xml, @"<(\w+)(?:\s+[^>]*)*>([^<]*)<\/\1>|<(\w+)(?:\s+[^>]*)*>|<\/(\w+)>|\[((?:(?:""([^""]*)""|(\d+))(?:,|\s)*)*)\]|\{|\}").ToArray();
 
             int a = 2;
+            int lastSearchedIndex;
             string json = $"{{\n{AddIndentsJson(a - 1)}\"root\": {{\n";
 
-            foreach (Match match in matches)
+            for (int i = 0; i < matches.Length; i++)
             {
+                Match match = matches[i];
+
                 if (match.Groups[1].Success) // Opening tag with content
                 {
                     string tagName = match.Groups[1].Value;
                     string content = match.Groups[2].Value;
 
-                    //json += $"{AddIndentsJson(a)}Opening Tag: <{tagName}>, Content: {content}\n";
+                    if (i - 1 >= 0 && tagName == matches[i - 1].Groups[1].Value)
+                    {
+                        values.Add(content);
 
-                    json += $"{AddIndentsJson(a)}\"{tagName}\": \"{content}\",\n";
+                        if (i + 1 < matches.Length && tagName == matches[i + 1].Groups[1].Value)
+                        {
+                            continue;
+                        }
+
+                        lastSearchedIndex = json.LastIndexOf(':');
+                        // wycinamy +1 aby nie uciąć ':' tylko spacje, +2 aby uciąć zbędną spację
+                        json = json.Substring(0, lastSearchedIndex + 1) + $" [\n{AddIndentsJson(a + 1)}" + json.Substring(lastSearchedIndex + 2);
+
+                        foreach (string value in values)
+                        {
+                            json += $"{AddIndentsJson(a + 1)}\"{value}\",\n";
+                        }
+
+                        lastSearchedIndex = json.LastIndexOf(',');
+                        if (lastSearchedIndex != -1)
+                        {
+                            json = json.Substring(0, lastSearchedIndex) + json.Substring(lastSearchedIndex + 1);
+                        }
+
+                        json += $"{AddIndentsJson(a)}],\n";
+                    }
+                    else
+                    {
+                        json += $"{AddIndentsJson(a)}\"{tagName}\": \"{content}\",\n";
+                    }
                 }
                 else if (match.Groups[3].Success) // Opening tag without content
                 {
                     string tagName = match.Groups[3].Value;
-
-                    //json += $"{AddIndentsJson(a)}Opening Tag: <{tagName}>\n";
 
                     json += $"{AddIndentsJson(a)}\"{tagName}\": {{\n";
                     a++;
                 }
                 else if (match.Groups[4].Success) // Closing tag
                 {
-                    string tagName = match.Groups[4].Value;
-
-                    //json += $"{AddIndentsJson(a)}Closing Tag: </{tagName}>\n";
-
                     // jezeli ostatni element ma ',' a zamykamy obiekt to go usuwamy
-                    int lastCommaIndex = json.LastIndexOf(',');
-                    if (lastCommaIndex != -1)
+                    lastSearchedIndex = json.LastIndexOf(',');
+                    if (lastSearchedIndex != -1)
                     {
-                        json = json.Substring(0, lastCommaIndex) + json.Substring(lastCommaIndex + 1);
+                        json = json.Substring(0, lastSearchedIndex) + json.Substring(lastSearchedIndex + 1);
                     }
 
-                    json += $"{AddIndentsJson(a-1)}}},\n";
+                    json += $"{AddIndentsJson(a - 1)}}},\n";
                     a--;
                 }
-                else if (match.Groups[5].Success) // Array
-                {
-                    string arrayContent = match.Groups[5].Value;
-
-                    //json += $"{AddIndentsJson(a)}Array: [{arrayContent}]\n";
-                }
-                else if (match.Value == "{") // Opening curly brace
-                {
-                    //json += $"{AddIndentsJson(a)}Opening Curly Brace: {{\n";
-                }
-                else if (match.Value == "}") // Closing curly brace
-                {
-                    //json += $"{AddIndentsJson(a)}Closing Curly Brace: }}\n";
-                }
             }
+
+            lastSearchedIndex = json.LastIndexOf(',');
+            if (lastSearchedIndex != -1)
+            {
+                json = json.Substring(0, lastSearchedIndex) + json.Substring(lastSearchedIndex + 1);
+            }
+
+            json += $"{AddIndentsJson(a - 1)}}}\n{AddIndentsJson(a - 2)}}}";
 
             return json;
         }
