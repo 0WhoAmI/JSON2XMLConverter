@@ -41,6 +41,7 @@ namespace JsonXmlConverter.Program
             // 
             // textBoxInput
             // 
+            textBoxInput.AcceptsTab = true;
             textBoxInput.Font = new Font("Arial", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
             textBoxInput.Location = new Point(10, 60);
             textBoxInput.Multiline = true;
@@ -48,6 +49,7 @@ namespace JsonXmlConverter.Program
             textBoxInput.ScrollBars = ScrollBars.Vertical;
             textBoxInput.Size = new Size(500, 320);
             textBoxInput.TabIndex = 1;
+            textBoxInput.KeyDown += TextBox_KeyDown;
             // 
             // textBoxOutput
             // 
@@ -87,13 +89,13 @@ namespace JsonXmlConverter.Program
             AutoScaleDimensions = new SizeF(9F, 18F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1040, 460);
-            MinimumSize = new Size(800, 460);
             Controls.Add(buttonSaveAs);
             Controls.Add(buttonConvert);
             Controls.Add(textBoxOutput);
             Controls.Add(textBoxInput);
             Controls.Add(buttonSelectFile);
             Font = new Font("Arial", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            MinimumSize = new Size(800, 460);
             Name = "MainForm";
             Text = "Konwerter plików";
             Resize += MainForm_Resize;

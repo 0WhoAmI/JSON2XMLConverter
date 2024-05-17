@@ -71,5 +71,17 @@ namespace JsonXmlConverter.Program
                 }
             }
         }
+
+        private void TextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab)
+            {
+                e.SuppressKeyPress = true;
+
+                int selectionStart = textBoxInput.SelectionStart;
+                textBoxInput.Text = textBoxInput.Text.Insert(selectionStart, "   ");
+                textBoxInput.SelectionStart = selectionStart + 3;
+            }
+        }
     }
 }
