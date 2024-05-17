@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34622.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JsonXmlConverter.Program", "JsonXmlConverter\JsonXmlConverter.Program.csproj", "{DC2F4A00-F2CF-42ED-AE9B-DDEAE2F912B0}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JsonXmlConverter.Core", "JsonXmlConverter.Core\JsonXmlConverter.Core.csproj", "{2008993B-1C9B-4AB8-ACE1-864D32304338}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JsonXmlConverter.Tests", "JsonXmlConverter.Tests\JsonXmlConverter.Tests.csproj", "{587B540D-DD60-4AB4-8CC0-C54C2B5CA815}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JsonXmlConverter.Program", "JsonXmlConverter.Program\JsonXmlConverter.Program.csproj", "{5B515540-57BD-4AD9-9F4B-FABB67A559DB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DC2F4A00-F2CF-42ED-AE9B-DDEAE2F912B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DC2F4A00-F2CF-42ED-AE9B-DDEAE2F912B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DC2F4A00-F2CF-42ED-AE9B-DDEAE2F912B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DC2F4A00-F2CF-42ED-AE9B-DDEAE2F912B0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2008993B-1C9B-4AB8-ACE1-864D32304338}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2008993B-1C9B-4AB8-ACE1-864D32304338}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2008993B-1C9B-4AB8-ACE1-864D32304338}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -27,6 +23,10 @@ Global
 		{587B540D-DD60-4AB4-8CC0-C54C2B5CA815}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{587B540D-DD60-4AB4-8CC0-C54C2B5CA815}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{587B540D-DD60-4AB4-8CC0-C54C2B5CA815}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B515540-57BD-4AD9-9F4B-FABB67A559DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B515540-57BD-4AD9-9F4B-FABB67A559DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B515540-57BD-4AD9-9F4B-FABB67A559DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B515540-57BD-4AD9-9F4B-FABB67A559DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

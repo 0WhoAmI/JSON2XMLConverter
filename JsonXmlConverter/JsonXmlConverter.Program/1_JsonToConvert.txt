@@ -1,0 +1,21 @@
+{
+   "root": {
+      "person": {
+         "name": "John",
+         "age": "30",
+         "city": "New York"
+      },
+      "qty": "3",
+      "animal": {
+         "cat": {
+            "Name": "Roberto",
+            "gender": "Male"
+         }
+      },
+      "cars": [
+         "Ford",
+         "BMW",
+         "Fiat"
+      ]
+   }
+}
