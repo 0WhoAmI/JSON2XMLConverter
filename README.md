@@ -1,7 +1,8 @@
 # Konwerter JSON/XML
 
 ## Opis
-Konwerter JSON/XML to aplikacja desktopowa napisana w języku C# z wykorzystaniem platformy .NET, która umożliwia konwersję danych między formatem JSON a formatem XML. Aplikacja działa na systemach Windows, Linux i macOS.
+Konwerter JSON/XML to aplikacja desktopowa napisana w języku C# z wykorzystaniem platformy .NET, która umożliwia konwersję danych między formatem JSON a formatem XML.
+Aplikacja ta wyróżnia się spośród innych bibliotek swoją inteligencją w rozpoznawaniu formatu danych. Nie wymaga od użytkownika określenia, czy dane są w formacie JSON czy XML; sama automatycznie decyduje, czy dokonuje konwersji z JSON na XML, czy odwrotnie.
 
 ## Funkcje
 - Konwersja plików JSON na XML i odwrotnie.
