@@ -163,6 +163,8 @@ namespace JsonXmlConverter.Core
                         }
 
                         json += $"{AddIndentsJson(a)}],\n";
+
+                        values = new List<string>();
                     }
                     else
                     {
